@@ -3,28 +3,42 @@ import json
 from http.server import BaseHTTPRequestHandler
 import requests
 
-BOT_TOKEN = os.getenv('7782183273:AAF0ftxZJwyPrT3J-rr95JIZJ01nqzRVOVI')  # Must match Vercel's env var name
+# WARNING: Never commit real tokens to GitHub. This is for testing only.
+# Remove this line and use environment variables for production
+BOT_TOKEN = "7782183273:AAF0ftxZJwyPrT3J-rr95JIZJ01nqzRVOVI"
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"Bot is running. POST to /api/bot for Telegram updates.")
+
     def do_POST(self):
         try:
-            # 1. Log raw headers (check in Vercel logs)
-            print("Headers:", dict(self.headers))
+            # Debug: Show raw request
+            print("\n=== New Telegram Update ===")
             
-            # 2. Read request
+            # Read request
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
-            print("Raw data:", post_data.decode('utf-8'))
+            print("Raw JSON:", post_data.decode('utf-8'))
             
-            # 3. Parse and respond
+            # Parse update
             update = json.loads(post_data.decode('utf-8'))
             chat_id = update['message']['chat']['id']
             text = update['message'].get('text', '')
+            print(f"Processing: {text} from {chat_id}")
             
+            # Prepare response
+            response_text = f"✅ Received: {text}"
+            print(f"Sending: {response_text}")
+            
+            # Send to Telegram
             requests.post(
                 f"{TELEGRAM_API}/sendMessage",
-                json={'chat_id': chat_id, 'text': f"✅ Received: {text}"}
+                json={'chat_id': chat_id, 'text': response_text}
             )
             
             self.send_response(200)
@@ -32,6 +46,11 @@ class handler(BaseHTTPRequestHandler):
             
         except Exception as e:
             error_msg = f"❌ Error: {str(e)}"
-            print(error_msg)  # Check in Vercel logs
+            print(error_msg)
             self.send_response(500)
             self.end_headers()
+            # Send error to yourself (optional)
+            requests.post(
+                f"{TELEGRAM_API}/sendMessage",
+                json={'chat_id': YOUR_CHAT_ID, 'text': error_msg}
+            )
