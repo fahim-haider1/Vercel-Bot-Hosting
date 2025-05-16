@@ -11,5 +11,19 @@
       "src": "/(.*)",
       "dest": "api/bot.py"
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "regions": ["iad1"],
+  "public": false,
+  "github": {
+    "autoAlias": true,
+    "silent": true,
+    "autoJobCancelation": true
+  },
+  "functions": {
+    "api/bot.py": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }
